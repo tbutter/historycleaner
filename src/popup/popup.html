@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Quickly clean Chrome browsing history entries matching your regular expression rules.">
+  <title>History Cleaner</title>
+  <link rel="stylesheet" href="../styles/shared.css">
+  <link rel="stylesheet" href="./popup.css">
+</head>
+<body class="popup-body">
+  <header class="popup-header">
+    <div class="popup-brand">
+      <img src="../../icons/icon48.png" alt="" class="popup-logo" width="26" height="26">
+      <div>
+        <h1 class="popup-title">History Cleaner</h1>
+        <p id="schedule-summary-text" class="popup-schedule-meta">Loading schedule…</p>
+      </div>
+    </div>
+    <button id="open-options-btn" type="button" class="btn btn-sm" title="Open Rules &amp; Schedule Settings">
+      Settings
+    </button>
+  </header>
+
+  <section class="metrics-bar" aria-label="Cleanup summary">
+    <div class="metric-cell">
+      <span class="metric-label">Active rules</span>
+      <span id="stat-active-rules" class="metric-value">0</span>
+    </div>
+    <div class="metric-cell">
+      <span class="metric-label">Last cleanup</span>
+      <span id="stat-last-run" class="metric-value">Never</span>
+    </div>
+    <div class="metric-cell">
+      <span class="metric-label">Total removed</span>
+      <span id="stat-total-deleted" class="metric-value">0</span>
+    </div>
+  </section>
+
+  <div class="popup-actions">
+    <button id="clean-now-btn" type="button" class="btn btn-primary">
+      Clean Now
+    </button>
+    <button id="preview-btn" type="button" class="btn">
+      Preview Matches
+    </button>
+  </div>
+
+  <div id="popup-feedback" class="banner" role="status" aria-live="polite" hidden></div>
+
+  <section id="popup-preview-section" class="popup-preview-box" aria-label="Dry-run preview results" hidden>
+    <div class="popup-preview-header">
+      <span id="popup-preview-summary">0 matching URLs</span>
+      <button id="close-preview-btn" type="button" class="link-btn">Hide</button>
+    </div>
+    <ul id="popup-preview-list" class="preview-list"></ul>
+  </section>
+
+  <form id="quick-add-form" class="panel quick-add-section" novalidate>
+    <div class="quick-add-label">
+      <label for="quick-pattern-input">Quick-add URL regex</label>
+      <label class="quick-flag-label" title="Case-insensitive matching (flag i)">
+        <input id="quick-case-checkbox" type="checkbox" checked>
+        <span>Ignore case (<code>i</code>)</span>
+      </label>
+    </div>
+    <div class="quick-add-row">
+      <input
+        id="quick-pattern-input"
+        type="text"
+        class="input mono"
+        placeholder="^https?://([^/]+\.)?example\.com/"
+        autocomplete="off"
+        spellcheck="false"
+      >
+      <button id="quick-add-btn" type="submit" class="btn">Add</button>
+    </div>
+    <p id="quick-validation-msg" class="validation-hint" hidden></p>
+  </form>
+
+  <footer class="popup-footer">
+    <span id="total-rules-footer">0 rules stored locally</span>
+    <button id="manage-all-rules-btn" type="button" class="link-btn">
+      Manage rules &amp; import/export →
+    </button>
+  </footer>
+
+  <script type="module" src="./popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Configure regular expression URL rules, periodic cleanup schedules, and local JSON/text import and export for History Cleaner.">
+  <title>History Cleaner — Rules &amp; Schedule</title>
+  <link rel="stylesheet" href="../styles/shared.css">
+  <link rel="stylesheet" href="./options.css">
+</head>
+<body>
+  <main class="options-shell">
+    <header class="options-header">
+      <div class="options-brand">
+        <img src="../../icons/icon128.png" alt="" class="options-logo" width="38" height="38">
+        <div>
+          <h1 class="options-title">History Cleaner</h1>
+          <p class="options-subtitle">
+            Removes Chrome browsing history entries whose <strong>full URL</strong> matches your regular expressions. Stored locally on this browser.
+          </p>
+        </div>
+      </div>
+      <div class="options-header-actions">
+        <button id="opt-preview-btn" type="button" class="btn">
+          Preview History Matches
+        </button>
+        <button id="opt-clean-now-btn" type="button" class="btn btn-primary">
+          Clean Now
+        </button>
+      </div>
+    </header>
+
+    <div id="global-banner" class="banner" role="status" aria-live="polite" hidden></div>
+
+    <section class="panel status-strip" aria-label="Extension telemetry">
+      <div class="status-item">
+        <span class="status-label">Active Regex Rules</span>
+        <span id="opt-stat-rules" class="status-value">0</span>
+        <span id="opt-stat-rules-sub" class="status-sub">0 total saved</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Periodic Schedule</span>
+        <span id="opt-stat-schedule" class="status-value">Every hour</span>
+        <span id="opt-stat-next-run" class="status-sub">Checking alarm…</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Last Cleanup</span>
+        <span id="opt-stat-last-run" class="status-value">Never</span>
+        <span id="opt-stat-last-detail" class="status-sub">No runs recorded yet</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Lifetime URLs Removed</span>
+        <span id="opt-stat-total-deleted" class="status-value">0</span>
+        <span class="status-sub">Zero deleted URLs logged</span>
+      </div>
+    </section>
+
+    <!-- Dry-Run Preview Drawer -->
+    <section id="opt-preview-panel" class="panel section-card" aria-label="Dry-run history preview" hidden>
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Current History Match Preview (Dry Run)</h2>
+          <p id="opt-preview-caption" class="section-desc">0 matching URLs found.</p>
+        </div>
+        <div class="options-header-actions">
+          <button id="opt-preview-clean-btn" type="button" class="btn btn-primary btn-sm">
+            Delete Matching Entries
+          </button>
+          <button id="opt-preview-close-btn" type="button" class="btn btn-ghost btn-sm">
+            Close Preview
+          </button>
+        </div>
+      </div>
+      <ul id="opt-preview-list" class="preview-list"></ul>
+    </section>
+
+    <!-- Regex Rules Section -->
+    <section class="panel section-card" aria-labelledby="rules-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="rules-heading" class="section-title">URL Regular Expression Rules</h2>
+          <p class="section-desc">
+            JavaScript <code>RegExp</code> syntax matched against the full URL (including scheme, hostname, path, and query string).
+          </p>
+        </div>
+      </div>
+
+      <form id="add-rule-form" novalidate>
+        <div class="add-rule-grid">
+          <div>
+            <label for="new-pattern-input" class="sr-only">Regular expression pattern</label>
+            <input
+              id="new-pattern-input"
+              type="text"
+              class="input mono"
+              placeholder="^https?://([^/]+\.)?example\.com/private/"
+              autocomplete="off"
+              spellcheck="false"
+            >
+          </div>
+          <div>
+            <label for="new-note-input" class="sr-only">Optional description or note</label>
+            <input
+              id="new-note-input"
+              type="text"
+              class="input"
+              placeholder="Optional note (e.g. Dev servers)"
+              autocomplete="off"
+            >
+          </div>
+          <label class="flag-toggle-pill" title="Match regardless of uppercase/lowercase letters">
+            <input id="new-case-checkbox" type="checkbox" checked>
+            <span>Ignore case (<code>i</code>)</span>
+          </label>
+          <button id="add-rule-btn" type="submit" class="btn btn-primary">
+            Add Rule
+          </button>
+        </div>
+        <p id="new-rule-validation" class="validation-hint" style="margin-top: 6px;" hidden></p>
+      </form>
+
+      <div id="empty-rules-state" class="empty-rules" hidden>
+        <p class="empty-rules-title">No regex rules configured yet</p>
+        <p class="empty-rules-sub">
+          Add a regular expression above or click a starter template below to pre-fill the input box:
+        </p>
+        <div class="template-chips">
+          <button
+            type="button"
+            class="btn btn-sm starter-chip"
+            data-pattern="^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?/"
+            data-note="Localhost dev servers"
+          >
+            Localhost URLs
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm starter-chip"
+            data-pattern="[?&amp;](utm_source|fbclid|gclid)="
+            data-note="Tracking query URLs"
+          >
+            Tracking Parameters
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm starter-chip"
+            data-pattern="^https?://([^/]+\.)?example\.com/"
+            data-note="Example domain &amp; subdomains"
+          >
+            Domain + Subdomains
+          </button>
+        </div>
+      </div>
+
+      <ul id="rules-list" class="rules-list" aria-label="Configured regular expression rules"></ul>
+    </section>
+
+    <!-- Live URL Tester -->
+    <section class="panel section-card" aria-labelledby="tester-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="tester-heading" class="section-title">Live URL Rule Tester</h2>
+          <p class="section-desc">
+            Paste any sample URL to test whether your active rules match it—matching rules will also highlight above.
+          </p>
+        </div>
+      </div>
+      <div class="tester-row">
+        <label for="test-url-input" class="sr-only">Sample URL to test</label>
+        <input
+          id="test-url-input"
+          type="url"
+          class="input mono"
+          placeholder="https://sub.example.com/private/page?session=123"
+          autocomplete="off"
+          spellcheck="false"
+        >
+        <button id="clear-test-url-btn" type="button" class="btn" hidden>Clear</button>
+      </div>
+      <div id="test-url-result" class="tester-result" hidden></div>
+    </section>
+
+    <!-- Schedule Settings -->
+    <section class="panel section-card" aria-labelledby="schedule-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="schedule-heading" class="section-title">Cleanup Schedule</h2>
+          <p class="section-desc">
+            Configure background periodic scans via <code>chrome.alarms</code> alongside manual cleanup.
+          </p>
+        </div>
+      </div>
+
+      <div class="schedule-grid">
+        <div class="schedule-row">
+          <div>
+            <strong>Automatic periodic cleanup</strong>
+            <p class="section-desc">Periodically scan history in the background and delete matching URLs.</p>
+          </div>
+          <label class="switch" aria-label="Enable automatic periodic cleanup">
+            <input id="schedule-enabled-toggle" type="checkbox" checked>
+            <span class="switch-track"></span>
+          </label>
+        </div>
+
+        <div class="schedule-row">
+          <div>
+            <label for="schedule-preset-select"><strong>Cleanup frequency</strong></label>
+            <p class="section-desc">Minimum interval supported by Chrome alarms is 1 minute.</p>
+          </div>
+          <div class="schedule-inline-controls">
+            <select id="schedule-preset-select" class="select">
+              <option value="5">Every 5 minutes</option>
+              <option value="15">Every 15 minutes</option>
+              <option value="30">Every 30 minutes</option>
+              <option value="60" selected>Every hour (60 min)</option>
+              <option value="360">Every 6 hours</option>
+              <option value="1440">Daily (24 hours)</option>
+              <option value="custom">Custom interval…</option>
+            </select>
+            <div id="custom-interval-wrap" class="schedule-inline-controls" hidden>
+              <label for="schedule-custom-minutes" class="sr-only">Custom interval in minutes</label>
+              <input
+                id="schedule-custom-minutes"
+                type="number"
+                min="1"
+                max="10080"
+                step="1"
+                value="45"
+                class="input input-minutes"
+              >
+              <span class="section-desc">min</span>
+              <button id="save-custom-interval-btn" type="button" class="btn btn-sm">Apply</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="schedule-row">
+          <div>
+            <strong>Run cleanup on browser startup</strong>
+            <p class="section-desc">Trigger an automatic sweep whenever Chrome launches.</p>
+          </div>
+          <label class="switch" aria-label="Run cleanup on browser startup">
+            <input id="schedule-startup-toggle" type="checkbox">
+            <span class="switch-track"></span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Import & Export -->
+    <section class="panel section-card" aria-labelledby="io-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="io-heading" class="section-title">Local Import &amp; Export</h2>
+          <p class="section-desc">
+            Back up or transfer your rules as structured JSON (with notes &amp; schedule) or plain text (<code>.txt</code>, one regex per line).
+          </p>
+        </div>
+      </div>
+
+      <div class="io-split">
+        <div class="io-box">
+          <span class="io-box-title">Export current rules</span>
+          <p class="section-desc">
+            Download a copy of your local rule list to your computer.
+          </p>
+          <div class="io-btn-group">
+            <button id="export-json-btn" type="button" class="btn">
+              Export JSON
+            </button>
+            <button id="export-txt-btn" type="button" class="btn">
+              Export Plain Text (.txt)
+            </button>
+          </div>
+        </div>
+
+        <div class="io-box">
+          <span class="io-box-title">Import rules (JSON or plain text)</span>
+          <div class="schedule-inline-controls">
+            <label for="import-mode-select" class="section-desc">Mode:</label>
+            <select id="import-mode-select" class="select">
+              <option value="merge" selected>Merge (keep existing, skip duplicates)</option>
+              <option value="replace">Replace all existing rules</option>
+            </select>
+            <input
+              id="import-file-input"
+              type="file"
+              accept=".json,.txt,.regex,text/plain,application/json"
+              hidden
+            >
+            <button id="import-file-btn" type="button" class="btn">
+              Choose File…
+            </button>
+          </div>
+
+          <label for="import-textarea" class="sr-only">Paste regex list or JSON</label>
+          <textarea
+            id="import-textarea"
+            class="textarea mono"
+            placeholder="# Paste one regex per line (or JSON export)&#10;^https?://localhost(:[0-9]+)?/&#10;^https?://([^/]+\.)?example\.com/temp/"
+            spellcheck="false"
+          ></textarea>
+          <div>
+            <button id="import-text-btn" type="button" class="btn">
+              Import Pasted Rules
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="privacy-footnote">
+      History Cleaner stores rules and aggregate counts strictly in <code>chrome.storage.local</code> and never logs or transmits visited or deleted URLs.
+    </footer>
+  </main>
+
+  <script type="module" src="./options.js"></script>
+</body>
+</html>

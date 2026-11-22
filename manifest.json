@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "History Cleaner — Regex URL Eraser",
+  "short_name": "HistCleaner",
+  "version": "1.0.0",
+  "description": "Automatically or manually removes Chrome browsing history URLs matching your local list of regular expressions.",
+  "minimum_chrome_version": "102",
+  "offline_enabled": true,
+  "permissions": [
+    "history",
+    "storage",
+    "alarms"
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "History Cleaner",
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_ui": {
+    "page": "src/options/options.html",
+    "open_in_tab": true
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
