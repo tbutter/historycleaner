@@ -2,6 +2,9 @@
 
 A lightweight, privacy-first **Manifest V3** Chrome extension that removes browsing history entries whose **full URL** matches your list of regular expressions—either on a configurable periodic background schedule (`chrome.alarms`) or via an on-demand manual trigger.
 
+> [!NOTE]
+> **Not for hiding activity from other users on a shared computer:** Removing entries via `chrome.history` is intended for keeping your history tidy, *not* for concealing visits from other people with access to your browser or device. Chrome's address bar (Omnibox) autocomplete caches, shortcuts, bookmarks, open tabs, or synced search suggestions may still surface visited URLs or domains for some time after history entries are deleted. Use Chrome's **Incognito mode** or separate OS user accounts when sharing a computer.
+
 ## Key Features
 
 - **Full-URL Regular Expression Matching:** Standard JavaScript `RegExp` rules evaluated strictly against full URLs (page titles are ignored), with per-rule case-insensitivity (`i`), enable/disable switches, and optional notes.
